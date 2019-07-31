@@ -17,6 +17,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/kataras/iris"
@@ -57,6 +58,9 @@ type gift struct {
 
 // 奖品列表
 var giftlist []*gift
+
+// 对共享变量 giftlist 加互斥锁
+var mu sync.Mutex
 
 // 抽奖的控制器
 type lotteryController struct {
@@ -220,6 +224,10 @@ func (c *lotteryController) Get() string {
 
 // 抽奖接口 GET http://localhost:8080/lucky
 func (c *lotteryController) GetLucky() map[string]interface{} {
+	// 互斥锁方案解决抽奖非线程安全
+	mu.Lock()
+	defer mu.Unlock()
+
 	// 每个用户分配1个参与抽奖的编码
 	code := luckyCode()
 	ok := false
