@@ -3,7 +3,6 @@ package comm
 import (
 	"crypto/aes"
 	"crypto/cipher"
-	"crypto/md5"
 	"encoding/base64"
 	"encoding/binary"
 	"errors"
@@ -52,13 +51,6 @@ func Random(max int) int {
 	} else {
 		return r.Intn(max)
 	}
-}
-
-// 对字符串进行签名
-func CreateSign(str string) string {
-	str = string(conf.SignSecret) + str
-	sign := fmt.Sprintf("%x", md5.Sum([]byte(str)))
-	return sign
 }
 
 // 对一个字符串进行AES对称加密
