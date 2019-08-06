@@ -1,6 +1,3 @@
-/**
- * 同一个IP抽奖，每天的操作限制，本地或者redis缓存
- */
 package utils
 
 import (
@@ -10,6 +7,7 @@ import (
 	"time"
 
 	"lottery/comm"
+	"lottery/conf"
 	"lottery/datasource"
 )
 
@@ -28,7 +26,7 @@ func resetGroupIpList() {
 	cacheObj := datasource.InstanceCache()
 	// 对2个段的数据 循环清理
 	for i := 0; i < ipFrameSize; i++ {
-		key := fmt.Sprintf("day_ips_%d", i)
+		key := fmt.Sprintf(conf.RdsDayIpLuckyCacheKeyPrefix + "%d", i)
 		cacheObj.Do("DEL", key)
 	}
 	log.Println("ip_day_lucky.resetGroupIpList stop")
@@ -44,7 +42,7 @@ func IncrIpLuckyNum(strIp string) int64 {
 	ip := comm.Ip4toInt(strIp)
 	// 和ip相关的数据散列为 2段 存储
 	i := ip % ipFrameSize
-	key := fmt.Sprintf("day_ips_%d", i)
+	key := fmt.Sprintf(conf.RdsDayIpLuckyCacheKeyPrefix + "%d", i)
 	cacheObj := datasource.InstanceCache()
 	rs, err := cacheObj.Do("HINCRBY", key, ip, 1)
 	if err != nil {
