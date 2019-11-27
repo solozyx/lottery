@@ -72,9 +72,10 @@ func (c *IndexController) GetLucky() map[string]interface{} {
 		limitBlack = true
 	}
 	var blackIpInfo *models.LtBlackip
+	isBlackIp := false
 	if !limitBlack {
-		ok,blackIpInfo = c.checkBlackip(ip)
-		if !ok {
+		isBlackIp,blackIpInfo = c.checkBlackip(ip)
+		if isBlackIp {
 			fmt.Println("IP黑名单 ",ip,limitBlack)
 			limitBlack = true
 		}
@@ -82,9 +83,10 @@ func (c *IndexController) GetLucky() map[string]interface{} {
 
 	// 6 验证用户黑名单
 	var userInfo *models.LtUser
+	isBlackUser := false
 	if !limitBlack {
-		ok,userInfo = c.checkBlackUser(loginuser.Uid)
-		if !ok {
+		isBlackUser,userInfo = c.checkBlackUser(loginuser.Uid)
+		if isBlackUser {
 			fmt.Println("用户黑名单 ",loginuser.Uid,limitBlack)
 			limitBlack = true
 		}
@@ -107,6 +109,12 @@ func (c *IndexController) GetLucky() map[string]interface{} {
 
 	// 9 对数量有限制的奖品发奖校验
 	if prizeGift.PrizeNum > 0 {
+		// Redis奖品池验证
+		if utils.GetGiftPoolNum(prizeGift.Id) <= 0 {
+			rs["code"] = 206
+			rs["msg"] = "很遗憾，没有中奖，请下次再试 :( "
+			return  rs
+		}
 		ok = utils.PrizeGift(prizeGift.Id, prizeGift.LeftNum)
 		// 没有奖品可以发
 		if !ok {

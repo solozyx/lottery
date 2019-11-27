@@ -57,11 +57,11 @@ func GetLoginUser(request *http.Request) *models.ObjLoginuser {
 		return nil
 	}
 
-	//// IP修改了是不是要重新登录
-	//ip := params.Get("ip")
-	//if ip != ClientIP(request) {
-	//	return nil
-	//}
+	// IP修改了是不是要重新登录
+	ip := params.Get("ip")
+	if ip != ClientIP(request) {
+		return nil
+	}
 
 	// 构建登录对象
 	loginuser := &models.ObjLoginuser{}
@@ -84,7 +84,7 @@ func GetLoginUser(request *http.Request) *models.ObjLoginuser {
 			sign, loginuser.Sign)
 		return nil
 	}
-
+	// TODO : 更新Cookie字段 now sign
 	return loginuser
 }
 

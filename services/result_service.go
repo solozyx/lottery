@@ -19,8 +19,8 @@ type ResultService interface {
 	CountByUser(uid int) int64
 	Get(id int) *models.LtResult
 	Delete(id int) error
-	Update(user *models.LtResult, columns []string) error
-	Create(user *models.LtResult) error
+	Update(result *models.LtResult, columns []string) error
+	Create(result *models.LtResult) error
 }
 
 type resultService struct {

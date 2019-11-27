@@ -29,7 +29,7 @@ func lockLuckyServ(uid int) bool {
 	cacheObj := datasource.InstanceCache()
 	// TODO : important 用Redis实现分布式锁
 	// SET key = 1
-	// NX 是否存在,不存在才能把 key 设置进去, 存在则不能设置进去;否则是更新key
+	// NX 是否存在,不存在才能把 key 设置进去, 存在则不能设置进去是更新key
 	// EX 过期时间 3秒 执行该Redis操作,3秒钟锁还没有释放,根据过期时间自动释放
 	// 过期时间是为了避免死锁,程序在运行中出现异常没有调用到 unLock 操作
 	// 保证锁在3秒内能够释放
