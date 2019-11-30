@@ -36,7 +36,7 @@ func PrizeGift(id, leftNum int) bool {
 	if ok {
 		// Redis奖品池发奖成功,更新MySQL数据库减少奖的库存
 		giftService := services.NewGiftService()
-		rows, err := giftService.DecrLeftNum(id, 1)
+		rows, err := giftService.DecrLeftNum(id, leftNum)
 		// 影响行数小于1 表示没有更新
 		if rows < 1 || err != nil {
 			log.Println("prizedata.PrizeGift giftService.DecrLeftNum error = ", err,
@@ -80,7 +80,7 @@ func prizeServGift(id int) bool {
 
 // TODO : NOTICE 优惠券发放MySQL版本,废弃
 // func PrizeCodeDiff_MySQL(giftId int, codeService services.CodeService) string {
-func prizeLocalCodeDiff(giftId int, codeService services.CodeService) string {
+func PrizeCodeDiffDeprecated(giftId int, codeService services.CodeService) string {
 	// 使用负数,避免和正数的uid冲突
 	lockUid := 0 - giftId - 100*1000*1000
 	LockLucky(lockUid)
