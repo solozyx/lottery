@@ -108,8 +108,8 @@ func PrizeCodeDiff(giftId int, codeService services.CodeService) string {
 }
 
 // 导入优惠券编码到Redis缓存
-func ImportCacheCodes(id int, code string) bool {
-	key := fmt.Sprintf(conf.RdsCodeCacheKeyPrefix + "%d", id)
+func ImportCacheCodes(giftId int, code string) bool {
+	key := fmt.Sprintf(conf.RdsCodeCacheKeyPrefix + "%d", giftId)
 	cacheObj := datasource.InstanceCache()
 	_, err := cacheObj.Do("SADD", key, code)
 	if err != nil {
@@ -121,14 +121,14 @@ func ImportCacheCodes(id int, code string) bool {
 }
 
 // 重新整理优惠券编码到缓存
-func RecacheCodes(id int, codeService services.CodeService) (succNum, failNum int) {
+func RecacheCodes(giftId int, codeService services.CodeService) (succNum, failNum int) {
 	// 从MySQL数据库查询该奖品对应的所有优惠券
-	list := codeService.Search(id)
+	list := codeService.Search(giftId)
 	if list == nil || len(list) <= 0 {
 		return 0, 0
 	}
 
-	key := fmt.Sprintf(conf.RdsCodeCacheKeyPrefix + "%d", id)
+	key := fmt.Sprintf(conf.RdsCodeCacheKeyPrefix + "%d", giftId)
 	cacheObj := datasource.InstanceCache()
 	// TODO : NOTICE 缓存已经有key了 做临时key
 	//  比如MySQL手动删除了10个优惠券编码,这10个编码存在于正式key中
@@ -156,12 +156,12 @@ func RecacheCodes(id int, codeService services.CodeService) (succNum, failNum in
 	return succNum,failNum
 }
 
-func GetCacheCodeNum(id int, codeService services.CodeService) (int, int) {
+func GetCacheCodeNum(giftId int, codeService services.CodeService) (int, int) {
 	mysqlNum := 0
 	redisNum := 0
 
 	// 数据库中优惠券编码数量
-	list := codeService.Search(id)
+	list := codeService.Search(giftId)
 	if len(list) > 0 {
 		for _, data := range list {
 			if data.SysStatus == 0 {
@@ -171,7 +171,7 @@ func GetCacheCodeNum(id int, codeService services.CodeService) (int, int) {
 	}
 
 	// redis缓存中优惠券编码数量
-	key := fmt.Sprintf(conf.RdsCodeCacheKeyPrefix + "%d", id)
+	key := fmt.Sprintf(conf.RdsCodeCacheKeyPrefix + "%d", giftId)
 	cacheObj := datasource.InstanceCache()
 	// 统计 SCARD
 	rs, err := cacheObj.Do("SCARD", key)
@@ -185,8 +185,8 @@ func GetCacheCodeNum(id int, codeService services.CodeService) (int, int) {
 }
 
 // 优惠券发放
-func prizeServCodeDiff(id int, codeService services.CodeService) string {
-	key := fmt.Sprintf(conf.RdsCodeCacheKeyPrefix + "%d", id)
+func prizeServCodeDiff(giftId int, codeService services.CodeService) string {
+	key := fmt.Sprintf(conf.RdsCodeCacheKeyPrefix + "%d", giftId)
 	cacheObj := datasource.InstanceCache()
 	rs, err := cacheObj.Do("SPOP", key)
 	if err != nil {
@@ -198,7 +198,6 @@ func prizeServCodeDiff(id int, codeService services.CodeService) string {
 		log.Printf("prizedata.prizeServCodeDiff rs = %s", rs)
 		return ""
 	}
-
 	// 优惠券发放成功,更新数据库中发放状态
 	codeService.UpdateByCode(&models.LtCode{
 		Code:       code,
@@ -394,7 +393,7 @@ func getGiftPrizeDataOneDay(num int) map[int][60]int {
 // 发奖数据 prizeData
 // map[int]map[int][60]int ==> map[day][hour][minute]num
 // 返回 [][2]int ==> [][发奖时间,发奖数量]
-func formatGiftPrizeData(nowTime int, dayNum int, prizeData map[int]map[int][60]int) [][2]int {
+func formatGiftPrizeData(nowTime, dayNum int, prizeData map[int]map[int][60]int) [][2]int {
 	rs := make([][2]int, 0)
 	nowHour := time.Now().Hour()
 
@@ -516,9 +515,9 @@ func DistributionGiftPool() int {
 }
 
 // 根据计划数据 往奖品池增加奖品数量
-func incrGiftPool(id, num int) int {
+func incrGiftPool(giftId, num int) int {
 	cacheObj := datasource.InstanceCache()
-	rtNum, err := redis.Int64(cacheObj.Do("HINCRBY", conf.RdsGiftPoolCacheKey, id, num))
+	rtNum, err := redis.Int64(cacheObj.Do("HINCRBY", conf.RdsGiftPoolCacheKey, giftId, num))
 	if err != nil {
 		log.Println("prizedata.incrGiftPool error = ", err)
 		return 0
@@ -527,7 +526,7 @@ func incrGiftPool(id, num int) int {
 	if int(rtNum) < num {
 		// 二次补偿
 		num2 := num - int(rtNum)
-		rtNum, err = redis.Int64(cacheObj.Do("HINCRBY", conf.RdsGiftPoolCacheKey, id, num2))
+		rtNum, err = redis.Int64(cacheObj.Do("HINCRBY", conf.RdsGiftPoolCacheKey, giftId, num2))
 		if err != nil {
 			log.Println("prizedata.incrGiftPool 2 error = ", err)
 			return 0
